@@ -1,13 +1,9 @@
 [build]
   command = "npm run build"
-  # publish directory is handled automatically by @netlify/plugin-nextjs
+  publish = "out"
 
 [build.environment]
   NODE_VERSION = "20"
-
-# Next.js plugin for Netlify - handles routing and static files automatically
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
 
 # Headers for caching static assets
 [[headers]]
