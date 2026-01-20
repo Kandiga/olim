@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface PreloaderProps {
@@ -13,6 +13,15 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
   const [showPreloader, setShowPreloader] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [forceReady, setForceReady] = useState(false);
+  const hasCalledComplete = useRef(false);
+
+  // Wrapper to ensure onComplete is only called once
+  const triggerComplete = useCallback(() => {
+    if (!hasCalledComplete.current) {
+      hasCalledComplete.current = true;
+      onComplete();
+    }
+  }, [onComplete]);
 
   // Minimum display time for elegant reveal
   useEffect(() => {
@@ -44,9 +53,17 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
         setShowPreloader(false);
       }, 200);
 
-      return () => clearTimeout(timer);
+      // Backup: call onComplete after animation duration in case AnimatePresence fails
+      const backupTimer = setTimeout(() => {
+        triggerComplete();
+      }, 1000); // 200ms delay + 600ms animation + 200ms buffer
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(backupTimer);
+      };
     }
-  }, [isReady, forceReady, minTimeElapsed]);
+  }, [isReady, forceReady, minTimeElapsed, triggerComplete]);
 
   // Prevent scroll while loading
   useEffect(() => {
@@ -62,7 +79,7 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
   }, [showPreloader]);
 
   return (
-    <AnimatePresence onExitComplete={onComplete}>
+    <AnimatePresence onExitComplete={triggerComplete}>
       {showPreloader && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-white"
