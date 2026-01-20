@@ -18,6 +18,7 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const [preloaderComplete, setPreloaderComplete] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
@@ -30,18 +31,36 @@ export default function Home() {
     // Check reduced motion preference
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mediaQuery.matches);
+
+    // Detect mobile device - check screen width and touch capability
+    const checkMobile = () => {
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth <= 768;
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsMobile(isSmallScreen || (isTouchDevice && isMobileUA));
+    };
+
+    checkMobile();
+
+    // Listen for resize to handle orientation changes
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Only load images after client is ready
+  // Only load images after client is ready and mobile detection is complete
   useEffect(() => {
     if (!isClient || prefersReducedMotion) return;
 
     let isMounted = true;
     const TOTAL_FRAMES = 240;
-    const PRIORITY_FRAMES = 50;
-    const BATCH_SIZE = 10;
-    const FRAME_PATH = '/assets/sequence/desktop';
+    // Load fewer priority frames on mobile for faster initial load
+    const PRIORITY_FRAMES = isMobile ? 30 : 50;
+    const BATCH_SIZE = isMobile ? 5 : 10;
+    // Use mobile or desktop frames based on device detection
+    const FRAME_PATH = isMobile ? '/assets/sequence/mobile' : '/assets/sequence/desktop';
     const loadedImages: HTMLImageElement[] = new Array(TOTAL_FRAMES);
+
+    console.log(`Loading ${isMobile ? 'MOBILE' : 'DESKTOP'} frames from ${FRAME_PATH}`);
     let loadedCount = 0;
     let processedPriorityCount = 0;
 
@@ -120,7 +139,7 @@ export default function Home() {
 
     loadAllImages();
     return () => { isMounted = false; };
-  }, [isClient, prefersReducedMotion]);
+  }, [isClient, prefersReducedMotion, isMobile]);
 
   // Handle preloader completion
   const handlePreloaderComplete = () => {
@@ -179,6 +198,7 @@ export default function Home() {
       <HeroJourney
         images={images}
         isReady={isReady && preloaderComplete}
+        isMobile={isMobile}
       />
 
       {/* About the Program Section */}

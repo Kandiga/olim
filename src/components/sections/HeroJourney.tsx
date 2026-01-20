@@ -8,6 +8,7 @@ import { CanvasRenderer, getFrameIndex, CANVAS_CONFIG } from '@/hooks/useCanvasS
 interface HeroJourneyProps {
   images: HTMLImageElement[];
   isReady: boolean;
+  isMobile?: boolean;
 }
 
 /**
@@ -40,7 +41,7 @@ const PHASES = {
 
 const LERP_FADE = 0.05; // Airy fade factor
 
-export default function HeroJourney({ images, isReady }: HeroJourneyProps) {
+export default function HeroJourney({ images, isReady, isMobile = false }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);

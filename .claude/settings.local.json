@@ -23,7 +23,8 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "WebFetch(domain:olimtowgether.netlify.app)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(ls:*)"
     ]
   }
 }
