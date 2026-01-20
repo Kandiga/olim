@@ -14,32 +14,30 @@ interface HeroJourneyProps {
 /**
  * NARRATIVE TIMELINE (Scroll Progress 0-1):
  *
- * Phase 1 (0.00 - 0.15): INTRO TEXT
+ * Phase 1 (0.00 - 0.12): INTRO TEXT
  *   - "Home Is Not a Place. It Is Belonging." on clean white
  *   - Canvas hidden (opacity 0)
  *
- * Phase 2 (0.15 - 0.25): TRANSITION
+ * Phase 2 (0.12 - 0.20): TRANSITION IN
  *   - Intro text fades OUT
  *   - Canvas fades IN
  *
- * Phase 3 (0.25 - 0.85): THE SCRUB
+ * Phase 3 (0.20 - 0.80): THE SCRUB
  *   - User scrubs through 240 frames (USA → Plane → Carmiel)
  *   - Canvas fully visible
  *
- * Phase 4 (0.85 - 1.00): FINALE
- *   - Canvas fades OUT
- *   - "Welcome Home. Join the March Conference." fades IN
+ * Phase 4 (0.80 - 1.00): CROSSFADE FINALE
+ *   - Canvas fades OUT smoothly
+ *   - "Welcome Home" fades IN simultaneously (crossfade)
  */
 
 const PHASES = {
   introStart: 0,
-  introEnd: 0.15,
-  transitionEnd: 0.25,
-  scrubEnd: 0.85,
-  finaleStart: 0.88,
+  introEnd: 0.12,
+  transitionEnd: 0.20,
+  scrubEnd: 0.80,
+  finaleStart: 0.80, // Start finale at same time as scrub ends for crossfade
 };
-
-const LERP_FADE = 0.05; // Airy fade factor
 
 export default function HeroJourney({ images, isReady, isMobile = false }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,7 +83,7 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
       trigger: containerRef.current,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 0.3,
+      scrub: 0.5, // Slightly smoother scrub for pleasant feel
       pin: stickyRef.current,
       pinSpacing: true,
       onUpdate: (self) => {
@@ -109,28 +107,40 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
   const getIntroOpacity = () => {
     if (scrollProgress <= PHASES.introEnd) return 1;
     if (scrollProgress >= PHASES.transitionEnd) return 0;
-    // Fade out during transition
-    return 1 - (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+    // Smooth fade out during transition
+    const progress = (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+    return 1 - easeInOutCubic(progress);
   };
 
   const getCanvasOpacity = () => {
     if (scrollProgress < PHASES.introEnd) return 0;
     if (scrollProgress >= PHASES.transitionEnd && scrollProgress <= PHASES.scrubEnd) return 1;
     if (scrollProgress < PHASES.transitionEnd) {
-      // Fade in during transition
-      return (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+      // Smooth fade in during transition
+      const progress = (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+      return easeInOutCubic(progress);
     }
     if (scrollProgress > PHASES.scrubEnd) {
-      // Fade out after scrub
-      return Math.max(0, 1 - (scrollProgress - PHASES.scrubEnd) / (PHASES.finaleStart - PHASES.scrubEnd));
+      // Smooth crossfade out - takes 20% of scroll (0.80 to 1.00)
+      const fadeOutDuration = 1 - PHASES.scrubEnd;
+      const progress = (scrollProgress - PHASES.scrubEnd) / fadeOutDuration;
+      return 1 - easeInOutCubic(Math.min(1, progress));
     }
     return 0;
   };
 
   const getFinaleOpacity = () => {
     if (scrollProgress < PHASES.finaleStart) return 0;
-    return Math.min(1, (scrollProgress - PHASES.finaleStart) / (1 - PHASES.finaleStart));
+    // Smooth crossfade in - synchronized with canvas fade out
+    const fadeInDuration = 1 - PHASES.finaleStart;
+    const progress = (scrollProgress - PHASES.finaleStart) / fadeInDuration;
+    return easeInOutCubic(Math.min(1, progress));
   };
+
+  // Easing function for smooth transitions
+  function easeInOutCubic(t: number): number {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
 
   const introOpacity = getIntroOpacity();
   const canvasOpacity = getCanvasOpacity();
@@ -140,7 +150,7 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
     <section
       ref={containerRef}
       className="relative"
-      style={{ height: '600vh', backgroundColor: '#F8F6F3' }}
+      style={{ height: '450vh', backgroundColor: '#F8F6F3' }}
       aria-label="Hero journey"
     >
       {/* Sticky container */}
