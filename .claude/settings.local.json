@@ -18,7 +18,11 @@
       "Bash(dir \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\public\")",
       "Bash(dir /s \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\public\\\\assets\")",
       "Bash(dir:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nOlim Together - Parallax scroll landing page\n\n- Scroll-driven video sequence with 240 frames\n- Seamless background blending with warm off-white \\(#F8F6F3\\)\n- Cropped letterbox bars while preserving USA text\n- GSAP ScrollTrigger integration\n- Responsive canvas renderer with contain & center logic\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:olimtowgether.netlify.app)"
     ]
   }
 }
