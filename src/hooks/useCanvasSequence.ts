@@ -131,7 +131,8 @@ export function useCanvasSequence(): UseCanvasSequenceReturn {
 /**
  * Premium Canvas Renderer
  * - No black bars: Always fills with white
- * - Contain & Center: Maintains 16:9 aspect ratio
+ * - Contain mode (desktop): Maintains aspect ratio, centered
+ * - Cover mode (mobile): Fills entire screen, may crop edges
  * - Smooth lerp transitions
  */
 export class CanvasRenderer {
@@ -145,8 +146,10 @@ export class CanvasRenderer {
   private resizeObserver: ResizeObserver | null = null;
   private width: number = 0;
   private height: number = 0;
+  private coverMode: boolean = false; // Cover mode for fullscreen on mobile
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, coverMode: boolean = false) {
+    this.coverMode = coverMode;
     this.canvas = canvas;
 
     // Get context with alpha disabled for better performance
@@ -277,7 +280,7 @@ export class CanvasRenderer {
 
     // CROP out the black letterbox bars from source image
     // Minimal crop to preserve "USA" text at top
-    const cropPercent = 0.04; // 4% crop from top and bottom
+    const cropPercent = this.coverMode ? 0 : 0.04; // No crop in cover mode
     const srcX = 0;
     const srcY = Math.floor(img.naturalHeight * cropPercent);
     const srcWidth = img.naturalWidth;
@@ -292,18 +295,36 @@ export class CanvasRenderer {
     let offsetX: number;
     let offsetY: number;
 
-    if (canvasRatio > contentRatio) {
-      // Canvas is wider - fit to height, center horizontally
-      drawHeight = this.height;
-      drawWidth = this.height * contentRatio;
-      offsetX = (this.width - drawWidth) / 2;
-      offsetY = 0;
+    if (this.coverMode) {
+      // COVER MODE (mobile): Fill entire canvas, crop edges if needed
+      if (canvasRatio > contentRatio) {
+        // Canvas is wider - fit to width, crop top/bottom
+        drawWidth = this.width;
+        drawHeight = this.width / contentRatio;
+        offsetX = 0;
+        offsetY = (this.height - drawHeight) / 2;
+      } else {
+        // Canvas is taller - fit to height, crop left/right
+        drawHeight = this.height;
+        drawWidth = this.height * contentRatio;
+        offsetX = (this.width - drawWidth) / 2;
+        offsetY = 0;
+      }
     } else {
-      // Canvas is taller - fit to width, center vertically
-      drawWidth = this.width;
-      drawHeight = this.width / contentRatio;
-      offsetX = 0;
-      offsetY = (this.height - drawHeight) / 2;
+      // CONTAIN MODE (desktop): Fit within canvas, show all content
+      if (canvasRatio > contentRatio) {
+        // Canvas is wider - fit to height, center horizontally
+        drawHeight = this.height;
+        drawWidth = this.height * contentRatio;
+        offsetX = (this.width - drawWidth) / 2;
+        offsetY = 0;
+      } else {
+        // Canvas is taller - fit to width, center vertically
+        drawWidth = this.width;
+        drawHeight = this.width / contentRatio;
+        offsetX = 0;
+        offsetY = (this.height - drawHeight) / 2;
+      }
     }
 
     // Draw the cropped frame (excluding black bars)

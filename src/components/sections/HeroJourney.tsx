@@ -49,13 +49,14 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
   const [scrollProgress, setScrollProgress] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
 
-  // Initialize canvas renderer
+  // Initialize canvas renderer with cover mode on mobile
   useEffect(() => {
     if (!canvasRef.current) return;
 
     const initTimer = setTimeout(() => {
       if (!rendererRef.current && canvasRef.current) {
-        rendererRef.current = new CanvasRenderer(canvasRef.current);
+        // Use cover mode on mobile for fullscreen effect
+        rendererRef.current = new CanvasRenderer(canvasRef.current, isMobile);
         setCanvasReady(true);
       }
     }, 100);
@@ -67,7 +68,7 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
         rendererRef.current = null;
       }
     };
-  }, []);
+  }, [isMobile]);
 
   // Update images when ready
   useEffect(() => {
@@ -196,15 +197,15 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
           </div>
         </motion.div>
 
-        {/* Purple Scroll Indicator - Right side */}
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 z-30 h-40">
-          {/* Background track */}
-          <div className="w-1 h-full bg-gray-200 rounded-full overflow-hidden">
-            {/* Purple progress bar */}
+        {/* Scroll Progress Indicator - Bottom, delicate and subtle */}
+        <div className={`absolute z-30 ${isMobile ? 'bottom-6 left-6 right-6' : 'bottom-8 left-1/2 -translate-x-1/2 w-32'}`}>
+          {/* Background track - thin and subtle */}
+          <div className={`${isMobile ? 'h-[2px]' : 'h-[3px]'} w-full bg-midnight-blue/10 rounded-full overflow-hidden backdrop-blur-sm`}>
+            {/* Progress bar - soft gold, semi-transparent */}
             <motion.div
-              className="w-full bg-purple-500 rounded-full origin-top"
+              className="h-full bg-gradient-to-r from-soft-gold/60 to-soft-gold/80 rounded-full origin-left"
               style={{
-                height: `${scrollProgress * 100}%`,
+                width: `${scrollProgress * 100}%`,
               }}
             />
           </div>
