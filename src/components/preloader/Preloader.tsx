@@ -13,23 +13,14 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
   const [showPreloader, setShowPreloader] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
   const [forceReady, setForceReady] = useState(false);
+
+  // Track if onComplete has been called to prevent duplicate calls
   const hasCalledComplete = useRef(false);
 
   // Wrapper to ensure onComplete is only called once
   const triggerComplete = useCallback(() => {
     if (!hasCalledComplete.current) {
       hasCalledComplete.current = true;
-      onComplete();
-    }
-  }, [onComplete]);
-
-  // Track if onComplete has been called to prevent duplicate calls
-  const hasCompletedRef = useRef(false);
-
-  // Wrapped completion callback that prevents duplicate calls
-  const triggerComplete = useCallback(() => {
-    if (!hasCompletedRef.current) {
-      hasCompletedRef.current = true;
       onComplete();
     }
   }, [onComplete]);
@@ -64,17 +55,9 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
         setShowPreloader(false);
       }, 200);
 
-      // Backup: call onComplete after animation duration in case AnimatePresence fails
-      const backupTimer = setTimeout(() => {
-        triggerComplete();
-      }, 1000); // 200ms delay + 600ms animation + 200ms buffer
-
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(backupTimer);
-      };
+      return () => clearTimeout(timer);
     }
-  }, [isReady, forceReady, minTimeElapsed, triggerComplete]);
+  }, [isReady, forceReady, minTimeElapsed]);
 
   // Backup timeout: ensure onComplete fires even if AnimatePresence fails
   // Fires 1 second after exit starts (200ms delay + 600ms animation + 200ms buffer)
