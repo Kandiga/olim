@@ -12,6 +12,7 @@ interface PreloaderProps {
 export default function Preloader({ progress, isReady, onComplete }: PreloaderProps) {
   const [showPreloader, setShowPreloader] = useState(true);
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const [forceReady, setForceReady] = useState(false);
 
   // Minimum display time for elegant reveal
   useEffect(() => {
@@ -22,16 +23,30 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
     return () => clearTimeout(timer);
   }, []);
 
-  // Trigger exit when ready and minimum time elapsed
+  // Maximum wait timeout - force completion after 10 seconds even if images fail
+  // This prevents infinite loading on Netlify if images 404
   useEffect(() => {
-    if (isReady && minTimeElapsed) {
+    const maxWaitTimer = setTimeout(() => {
+      if (!isReady) {
+        console.warn('Preloader timeout reached - forcing ready state');
+        setForceReady(true);
+      }
+    }, 10000);
+
+    return () => clearTimeout(maxWaitTimer);
+  }, [isReady]);
+
+  // Trigger exit when ready (or force ready) and minimum time elapsed
+  useEffect(() => {
+    const effectiveReady = isReady || forceReady;
+    if (effectiveReady && minTimeElapsed) {
       const timer = setTimeout(() => {
         setShowPreloader(false);
       }, 200);
 
       return () => clearTimeout(timer);
     }
-  }, [isReady, minTimeElapsed]);
+  }, [isReady, forceReady, minTimeElapsed]);
 
   // Prevent scroll while loading
   useEffect(() => {
@@ -112,7 +127,7 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
             >
-              {isReady ? 'Ready' : 'Loading experience'}
+              {(isReady || forceReady) ? 'Ready' : 'Loading experience'}
             </motion.p>
 
             {/* Progress bar */}

@@ -28,6 +28,7 @@ export function useCanvasSequence(): UseCanvasSequenceReturn {
     let isMounted = true;
     const loadedImages: HTMLImageElement[] = new Array(TOTAL_FRAMES);
     let loadedCount = 0;
+    let processedPriorityCount = 0; // Track both success AND failure for priority frames
 
     const loadImage = (index: number): Promise<HTMLImageElement> => {
       return new Promise((resolve) => {
@@ -44,16 +45,37 @@ export function useCanvasSequence(): UseCanvasSequenceReturn {
           const progress = Math.round((loadedCount / TOTAL_FRAMES) * 100);
           setLoadProgress(progress);
 
-          if (loadedCount === PRIORITY_FRAMES) {
-            setIsReady(true);
-            setImages([...loadedImages]);
+          // Track priority frame completion (success)
+          if (index < PRIORITY_FRAMES) {
+            processedPriorityCount++;
+            if (processedPriorityCount === PRIORITY_FRAMES) {
+              setIsReady(true);
+              setImages([...loadedImages]);
+            }
           }
 
           resolve(img);
         };
 
         img.onerror = () => {
+          if (!isMounted) return resolve(img);
+
           console.error(`Failed to load frame ${frameNum}`);
+
+          // Track priority frame completion (failure) - still count it!
+          if (index < PRIORITY_FRAMES) {
+            processedPriorityCount++;
+            // Update progress to show something is happening
+            const progress = Math.round((processedPriorityCount / TOTAL_FRAMES) * 100);
+            setLoadProgress(Math.max(progress, 1));
+
+            if (processedPriorityCount === PRIORITY_FRAMES) {
+              // All priority frames processed (even if some failed) - allow site to load
+              setIsReady(true);
+              setImages([...loadedImages]);
+            }
+          }
+
           resolve(img);
         };
       });
