@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --midnight-blue: #0A0F1E;
+  --warm-sand: #F5F2ED;
+  --soft-gold: #C9A227;
+  --canvas-bg: #F8F6F3;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #F8F6F3;
+  color: var(--midnight-blue);
+  font-family: var(--font-inter), Inter, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--midnight-blue);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--soft-gold);
+}
+
+/* Preloader gradient background */
+.preloader-gradient {
+  background: #F8F6F3;
+}
+
+/* Frosted glass effect */
+.glass-card {
+  background: rgba(10, 15, 30, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+}
+
+/* Gold outline button */
+.btn-gold-outline {
+  @apply border-2 border-soft-gold text-soft-gold bg-transparent
+         px-8 py-4 font-serif text-lg tracking-wide
+         transition-all duration-300 ease-out;
+}
+
+.btn-gold-outline:hover {
+  @apply bg-soft-gold/10 shadow-lg;
+  box-shadow: 0 0 30px rgba(201, 162, 39, 0.3);
+  transform: scale(1.02);
+}
+
+.btn-gold-outline:focus {
+  @apply outline-none ring-2 ring-soft-gold ring-offset-2 ring-offset-midnight-blue;
+}
+
+/* Form input styling */
+.form-input {
+  @apply w-full bg-midnight-blue/50 border border-warm-sand/20
+         text-warm-sand placeholder-warm-sand/50
+         px-4 py-3 rounded-lg
+         focus:outline-none focus:border-soft-gold focus:ring-1 focus:ring-soft-gold
+         transition-colors duration-200;
+}
+
+.form-label {
+  @apply block text-warm-sand/80 text-sm font-medium mb-2;
+}
+
+/* Scroll arrow animation */
+@keyframes bounce-arrow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+}
+
+.scroll-arrow {
+  animation: bounce-arrow 2s infinite ease-in-out;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .scroll-arrow {
+    animation: none;
+  }
+}
+
+/* Cookie consent bar */
+.cookie-bar {
+  @apply fixed bottom-0 left-0 right-0 z-50
+         bg-midnight-blue/95 backdrop-blur-sm
+         border-t border-warm-sand/10
+         px-4 py-4;
+}
+
+/* Selection styling */
+::selection {
+  background: var(--soft-gold);
+  color: var(--midnight-blue);
+}

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\"\" && find . -type f -name \".* \" -o -type f)",
+      "Bash(cd:*)",
+      "Bash(wc:*)",
+      "Bash(dir /b \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\Parallax Video SCROLL\\\\*.jpg\")",
+      "Bash(powershell -Command \"\\(Get-ChildItem ''C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\Parallax Video SCROLL\\\\*.jpg''\\).Count\")",
+      "Bash(npm run convert-images:*)",
+      "Bash(powershell -Command \"Remove-Item ''C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\next.config.ts''\")",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(test:*)",
+      "Bash(dir \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\")",
+      "Bash(dir \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\Parallax Video SCROLL2\")",
+      "Bash(dir \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\Parallax Video SCROLL\")",
+      "Bash(dir \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\public\")",
+      "Bash(dir /s \"C:\\\\Users\\\\abaga\\\\OneDrive\\\\Desktop\\\\olim towgether\\\\public\\\\assets\")",
+      "Bash(dir:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
