@@ -23,6 +23,17 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
     }
   }, [onComplete]);
 
+  // Track if onComplete has been called to prevent duplicate calls
+  const hasCompletedRef = useRef(false);
+
+  // Wrapped completion callback that prevents duplicate calls
+  const triggerComplete = useCallback(() => {
+    if (!hasCompletedRef.current) {
+      hasCompletedRef.current = true;
+      onComplete();
+    }
+  }, [onComplete]);
+
   // Minimum display time for elegant reveal
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -64,6 +75,18 @@ export default function Preloader({ progress, isReady, onComplete }: PreloaderPr
       };
     }
   }, [isReady, forceReady, minTimeElapsed, triggerComplete]);
+
+  // Backup timeout: ensure onComplete fires even if AnimatePresence fails
+  // Fires 1 second after exit starts (200ms delay + 600ms animation + 200ms buffer)
+  useEffect(() => {
+    if (!showPreloader) {
+      const backupTimer = setTimeout(() => {
+        triggerComplete();
+      }, 1000);
+
+      return () => clearTimeout(backupTimer);
+    }
+  }, [showPreloader, triggerComplete]);
 
   // Prevent scroll while loading
   useEffect(() => {
