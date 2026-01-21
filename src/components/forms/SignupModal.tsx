@@ -3,13 +3,16 @@
 import { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import SignupForm from './SignupForm';
+import { MODAL_CONTENT, ModalSource } from '@/lib/constants';
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  ctaSource?: ModalSource;
 }
 
-export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
+export default function SignupModal({ isOpen, onClose, ctaSource = 'hero' }: SignupModalProps) {
+  const content = MODAL_CONTENT[ctaSource];
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -76,7 +79,11 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
             </button>
 
             {/* SignupForm - inherits its own styling */}
-            <SignupForm />
+            <SignupForm
+              source={ctaSource}
+              title={content.title}
+              subtitle={content.subtitle}
+            />
           </motion.div>
         </div>
       )}

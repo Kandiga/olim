@@ -1,23 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CONTENT } from '@/lib/constants';
 
 export default function ThankYouPage() {
-  // Prevent going back to form (optional)
-  useEffect(() => {
-    window.history.pushState(null, '', window.location.href);
-    window.onpopstate = function () {
-      window.history.go(1);
-    };
-
-    return () => {
-      window.onpopstate = null;
-    };
-  }, []);
-
   return (
     <main className="min-h-screen flex items-center justify-center px-4 preloader-gradient">
       <motion.div

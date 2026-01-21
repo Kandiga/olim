@@ -4,10 +4,11 @@ import { motion } from 'framer-motion';
 import { FINAL_CTA } from '@/lib/constants';
 
 interface FinalCTAProps {
-  onCtaClick?: () => void;
+  onConferenceClick?: () => void;
+  onWebinarClick?: () => void;
 }
 
-export default function FinalCTA({ onCtaClick }: FinalCTAProps) {
+export default function FinalCTA({ onConferenceClick, onWebinarClick }: FinalCTAProps) {
   return (
     <section className="final-cta-section py-20 md:py-32 px-6">
       <div className="max-w-4xl mx-auto text-center">
@@ -35,33 +36,43 @@ export default function FinalCTA({ onCtaClick }: FinalCTAProps) {
 
         {/* CTA buttons */}
         <motion.div
-          className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center"
+          className="flex flex-col sm:flex-row gap-6 sm:gap-8 justify-center"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           {/* Primary CTA */}
-          <button
-            onClick={onCtaClick}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-soft-gold text-midnight-blue
-                       font-serif text-lg tracking-wide
-                       hover:bg-soft-gold/90 transition-all duration-300
-                       hover:shadow-lg hover:shadow-soft-gold/30 cursor-pointer"
-          >
-            {FINAL_CTA.primaryCta}
-          </button>
+          <div className="flex flex-col items-center">
+            <button
+              onClick={onConferenceClick}
+              className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 bg-soft-gold text-midnight-blue
+                         font-serif text-lg tracking-wide
+                         hover:bg-soft-gold/90 transition-all duration-300
+                         hover:shadow-lg hover:shadow-soft-gold/30 cursor-pointer"
+            >
+              {FINAL_CTA.primaryCta}
+            </button>
+            <span className="mt-2 text-sm text-warm-sand/60">
+              {FINAL_CTA.primarySubtext}
+            </span>
+          </div>
 
           {/* Secondary CTA */}
-          <button
-            onClick={onCtaClick}
-            className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 border-2 border-soft-gold text-soft-gold
-                       font-serif text-lg tracking-wide bg-transparent
-                       hover:bg-soft-gold/10 transition-all duration-300
-                       hover:shadow-lg hover:shadow-soft-gold/20 cursor-pointer"
-          >
-            {FINAL_CTA.secondaryCta}
-          </button>
+          <div className="flex flex-col items-center">
+            <button
+              onClick={onWebinarClick}
+              className="w-full sm:w-auto px-8 md:px-12 py-4 md:py-5 border-2 border-soft-gold text-soft-gold
+                         font-serif text-lg tracking-wide bg-transparent
+                         hover:bg-soft-gold/10 transition-all duration-300
+                         hover:shadow-lg hover:shadow-soft-gold/20 cursor-pointer"
+            >
+              {FINAL_CTA.secondaryCta}
+            </button>
+            <span className="mt-2 text-sm text-warm-sand/60">
+              {FINAL_CTA.secondarySubtext}
+            </span>
+          </div>
         </motion.div>
       </div>
     </section>

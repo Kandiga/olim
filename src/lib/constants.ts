@@ -44,8 +44,8 @@ export const CONTENT = {
   supporting: 'Join thousands of families building their tomorrow in Israel. Your journey home starts with a single step.',
   ctaButton: 'Get Started',
   thankYou: {
-    title: 'Welcome Home',
-    message: "We'll be in touch soon...",
+    title: "You're On the List!",
+    message: "Check your inbox—we've sent you everything you need to know.",
   },
 } as const;
 
@@ -66,36 +66,61 @@ export const BREAKPOINTS = {
 
 // Value Proposition Section
 export const VALUE_PROPOSITION = {
-  headline: 'Aliyah with Purpose. A Future with Peace of Mind.',
+  headline: 'Your Path to Israel, Simplified',
+  subheadline: "Join 50+ families relocating together. Here's how we help:",
   features: [
     {
       icon: 'users',
-      title: 'Group Movement',
-      description: 'Move as a synchronized community, not a solo family.',
+      title: 'Move With Community',
+      description: 'Never feel alone. Join families relocating together in our March group.',
     },
     {
       icon: 'home',
-      title: 'Premium Housing',
-      description: 'Modern developments in Katzrin, Karmiel, and Sderot.',
+      title: 'Premium Housing Secured',
+      description: 'Modern homes in Katzrin, Karmiel, and Sderot—reserved for our group.',
     },
     {
       icon: 'heart',
-      title: 'Family Support',
-      description: 'Top-tier schools and native English services.',
+      title: 'Family-First Support',
+      description: 'Top-tier schools, English-speaking services, and dedicated family liaisons.',
     },
     {
       icon: 'compass',
-      title: 'Expert Logistics',
-      description: 'Dignified guidance through jobs and bureaucracy.',
+      title: 'Expert Guidance',
+      description: 'Jobs, visas, bureaucracy—handled with dignity by our logistics team.',
     },
   ],
-  ctaText: 'Learn More',
+  ctaText: 'Reserve My Spot',
 } as const;
 
 // Final CTA Section
 export const FINAL_CTA = {
-  headline: 'Ready to Begin Your Journey?',
-  subheadline: 'Join thousands of families who have found their home in Israel.',
-  primaryCta: 'Join the March Conference in New Jersey',
-  secondaryCta: 'Register for the Upcoming Webinar',
+  headline: 'Ready to Take the First Step?',
+  subheadline: 'Choose what works for you:',
+  primaryCta: 'Attend Upcoming Conference',
+  primarySubtext: 'In-person event in New Jersey',
+  secondaryCta: 'Join Free Weekly Webinar',
+  secondarySubtext: 'Online, from anywhere',
 } as const;
+
+// Modal content based on source
+export const MODAL_CONTENT = {
+  hero: {
+    title: 'Reserve Your Spot',
+    subtitle: 'Take the first step towards your new home',
+  },
+  'value-prop': {
+    title: 'Reserve Your Spot',
+    subtitle: 'Join 50+ families making Aliyah together',
+  },
+  conference: {
+    title: 'Conference Registration',
+    subtitle: 'In-person event in New Jersey',
+  },
+  webinar: {
+    title: 'Webinar Registration',
+    subtitle: 'Join our weekly online sessions',
+  },
+} as const;
+
+export type ModalSource = keyof typeof MODAL_CONTENT;

@@ -212,6 +212,36 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
           >
             Join the March Conference
           </button>
+
+          {/* Scroll indicator */}
+          <div className="mt-12 flex flex-col items-center">
+            <button
+              onClick={() => {
+                const valueSection = document.getElementById('value-proposition');
+                valueSection?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="flex flex-col items-center text-midnight-blue/60 hover:text-midnight-blue
+                         transition-colors duration-300 cursor-pointer group"
+              aria-label="Scroll to learn more"
+            >
+              <span className="text-sm tracking-wide mb-2 group-hover:text-midnight-blue transition-colors">
+                Scroll to learn more
+              </span>
+              <svg
+                className="w-6 h-6 scroll-arrow"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </motion.div>
 

@@ -9,6 +9,7 @@ import StaticFallback from '@/components/sections/StaticFallback';
 import SignupForm from '@/components/forms/SignupForm';
 import ValueProposition from '@/components/sections/ValueProposition';
 import FinalCTA from '@/components/sections/FinalCTA';
+import { ModalSource } from '@/lib/constants';
 
 // Dynamically import heavy components to avoid SSR issues
 const HeroJourney = dynamic(() => import('@/components/sections/HeroJourney'), {
@@ -26,6 +27,7 @@ export default function Home() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalSource, setModalSource] = useState<ModalSource>('hero');
   const [animationComplete, setAnimationComplete] = useState(false);
 
   // Ensure client-side hydration first
@@ -188,7 +190,10 @@ export default function Home() {
   }, [preloaderComplete]);
 
   // Modal controls
-  const openModal = () => setIsModalOpen(true);
+  const openModal = (source: ModalSource = 'hero') => {
+    setModalSource(source);
+    setIsModalOpen(true);
+  };
   const closeModal = () => setIsModalOpen(false);
 
   // Handle animation completion
@@ -246,20 +251,23 @@ export default function Home() {
         images={images}
         isReady={preloaderComplete}
         isMobile={isMobile}
-        onCtaClick={openModal}
+        onCtaClick={() => openModal('hero')}
         onAnimationComplete={handleAnimationComplete}
       />
 
       {/* Scrollable sections after animation completes */}
       {animationComplete && (
         <>
-          <ValueProposition onCtaClick={openModal} />
-          <FinalCTA onCtaClick={openModal} />
+          <ValueProposition onCtaClick={() => openModal('value-prop')} />
+          <FinalCTA
+            onConferenceClick={() => openModal('conference')}
+            onWebinarClick={() => openModal('webinar')}
+          />
         </>
       )}
 
       {/* Signup Modal */}
-      <SignupModal isOpen={isModalOpen} onClose={closeModal} />
+      <SignupModal isOpen={isModalOpen} onClose={closeModal} ctaSource={modalSource} />
 
       {/* Cookie consent banner */}
       <CookieConsent />

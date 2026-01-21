@@ -10,7 +10,7 @@ interface ValuePropositionProps {
 
 export default function ValueProposition({ onCtaClick }: ValuePropositionProps) {
   return (
-    <section className="value-prop-gradient py-20 md:py-32 px-6">
+    <section id="value-proposition" className="value-prop-gradient py-20 md:py-32 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Section headline */}
         <motion.div
@@ -23,6 +23,11 @@ export default function ValueProposition({ onCtaClick }: ValuePropositionProps) 
           <h2 className="font-serif text-3xl md:text-5xl lg:text-6xl text-midnight-blue leading-tight">
             {VALUE_PROPOSITION.headline}
           </h2>
+          {VALUE_PROPOSITION.subheadline && (
+            <p className="mt-4 text-lg md:text-xl text-midnight-blue/70 max-w-2xl mx-auto">
+              {VALUE_PROPOSITION.subheadline}
+            </p>
+          )}
         </motion.div>
 
         {/* Feature cards grid */}

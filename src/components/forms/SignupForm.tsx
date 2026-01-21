@@ -3,7 +3,13 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CONTENT, INTEREST_OPTIONS } from '@/lib/constants';
+import { CONTENT, INTEREST_OPTIONS, ModalSource } from '@/lib/constants';
+
+interface SignupFormProps {
+  source?: ModalSource;
+  title?: string;
+  subtitle?: string;
+}
 
 interface FormData {
   firstName: string;
@@ -19,7 +25,11 @@ interface FormErrors {
   interest?: string;
 }
 
-export default function SignupForm() {
+export default function SignupForm({
+  source = 'hero',
+  title = 'Begin Your Journey',
+  subtitle = 'Take the first step towards your new home',
+}: SignupFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
@@ -78,6 +88,7 @@ export default function SignupForm() {
       // Netlify form submission
       const formBody = new URLSearchParams({
         'form-name': 'signup',
+        'signup-source': source,
         ...formData,
       });
 
@@ -109,10 +120,10 @@ export default function SignupForm() {
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
         <h2 className="font-serif text-3xl md:text-4xl text-warm-sand text-center mb-2">
-          Begin Your Journey
+          {title}
         </h2>
         <p className="text-warm-sand/60 text-center mb-8">
-          Take the first step towards your new home
+          {subtitle}
         </p>
 
         {/* Hidden form for Netlify detection */}
@@ -121,9 +132,13 @@ export default function SignupForm() {
           <input type="text" name="lastName" />
           <input type="email" name="email" />
           <select name="interest"></select>
+          <input type="hidden" name="signup-source" />
         </form>
 
         <form onSubmit={handleSubmit} noValidate>
+          {/* Hidden field to track signup source */}
+          <input type="hidden" name="signup-source" value={source} />
+
           {/* Honeypot field for spam protection */}
           <p className="hidden">
             <label>
