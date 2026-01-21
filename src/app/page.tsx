@@ -153,8 +153,21 @@ export default function Home() {
 
   // Handle preloader completion
   const handlePreloaderComplete = () => {
+    console.log('Preloader complete!');
     setPreloaderComplete(true);
   };
+
+  // Fallback: Force preloaderComplete after 12 seconds no matter what
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      if (!preloaderComplete) {
+        console.log('Fallback: Forcing preloader complete');
+        setPreloaderComplete(true);
+      }
+    }, 12000);
+
+    return () => clearTimeout(fallbackTimer);
+  }, [preloaderComplete]);
 
   // Modal controls
   const openModal = () => setIsModalOpen(true);
@@ -207,7 +220,7 @@ export default function Home() {
       {/* Hero Journey with canvas animation - auto-plays */}
       <HeroJourney
         images={images}
-        isReady={isReady && preloaderComplete}
+        isReady={preloaderComplete}
         isMobile={isMobile}
         onCtaClick={openModal}
       />
