@@ -63,3 +63,39 @@ export const BREAKPOINTS = {
   tablet: 1024,
   desktop: 1280,
 } as const;
+
+// Value Proposition Section
+export const VALUE_PROPOSITION = {
+  headline: 'Aliyah with Purpose. A Future with Peace of Mind.',
+  features: [
+    {
+      icon: 'users',
+      title: 'Group Movement',
+      description: 'Move as a synchronized community, not a solo family.',
+    },
+    {
+      icon: 'home',
+      title: 'Premium Housing',
+      description: 'Modern developments in Katzrin, Karmiel, and Sderot.',
+    },
+    {
+      icon: 'heart',
+      title: 'Family Support',
+      description: 'Top-tier schools and native English services.',
+    },
+    {
+      icon: 'compass',
+      title: 'Expert Logistics',
+      description: 'Dignified guidance through jobs and bureaucracy.',
+    },
+  ],
+  ctaText: 'Learn More',
+} as const;
+
+// Final CTA Section
+export const FINAL_CTA = {
+  headline: 'Ready to Begin Your Journey?',
+  subheadline: 'Join thousands of families who have found their home in Israel.',
+  primaryCta: 'Join the March Conference in New Jersey',
+  secondaryCta: 'Register for the Upcoming Webinar',
+} as const;

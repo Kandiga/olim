@@ -9,6 +9,7 @@ interface HeroJourneyProps {
   isReady: boolean;
   isMobile?: boolean;
   onCtaClick?: () => void;
+  onAnimationComplete?: () => void;
 }
 
 const PHASES = {
@@ -21,13 +22,14 @@ const PHASES = {
 
 const ANIMATION_DURATION = 7000; // 7 seconds
 
-export default function HeroJourney({ images, isReady, isMobile = false, onCtaClick }: HeroJourneyProps) {
+export default function HeroJourney({ images, isReady, isMobile = false, onCtaClick, onAnimationComplete }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const imagesRef = useRef<HTMLImageElement[]>(images);
   const animationStartedRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
+  const animationCompleteCalledRef = useRef(false);
   const [animationProgress, setAnimationProgress] = useState(0);
 
   // Keep imagesRef in sync
@@ -115,6 +117,17 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
       // Don't cancel animation on cleanup - let it run
     };
   }, [isReady]);
+
+  // Trigger onAnimationComplete callback with delay for "Welcome Home" visibility
+  useEffect(() => {
+    if (animationProgress >= 1 && !animationCompleteCalledRef.current && onAnimationComplete) {
+      animationCompleteCalledRef.current = true;
+      const timer = setTimeout(() => {
+        onAnimationComplete();
+      }, 1500); // 1.5s delay for Welcome Home visibility
+      return () => clearTimeout(timer);
+    }
+  }, [animationProgress, onAnimationComplete]);
 
   // Easing function
   function easeInOutCubic(t: number): number {

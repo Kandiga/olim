@@ -7,6 +7,8 @@ import SignupModal from '@/components/forms/SignupModal';
 import CookieConsent from '@/components/consent/CookieConsent';
 import StaticFallback from '@/components/sections/StaticFallback';
 import SignupForm from '@/components/forms/SignupForm';
+import ValueProposition from '@/components/sections/ValueProposition';
+import FinalCTA from '@/components/sections/FinalCTA';
 
 // Dynamically import heavy components to avoid SSR issues
 const HeroJourney = dynamic(() => import('@/components/sections/HeroJourney'), {
@@ -24,6 +26,7 @@ export default function Home() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   // Ensure client-side hydration first
   useEffect(() => {
@@ -43,19 +46,33 @@ export default function Home() {
 
     checkMobile();
 
-    // Disable scrolling on the page
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-
     // Listen for resize to handle orientation changes
     window.addEventListener('resize', checkMobile);
     return () => {
       window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  // Control page scrolling based on animation state
+  useEffect(() => {
+    if (!isClient) return;
+
+    if (animationComplete) {
+      // Re-enable scrolling after animation completes
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    } else {
+      // Disable scrolling during animation
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
       // Restore scrolling on unmount
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     };
-  }, []);
+  }, [isClient, animationComplete]);
 
   // Only load images after client is ready and mobile detection is complete
   useEffect(() => {
@@ -174,6 +191,12 @@ export default function Home() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
+  // Handle animation completion
+  const handleAnimationComplete = () => {
+    console.log('Animation complete - enabling scrolling');
+    setAnimationComplete(true);
+  };
+
   // Show loading state during SSR/hydration
   if (!isClient) {
     return (
@@ -208,7 +231,7 @@ export default function Home() {
   }
 
   return (
-    <main className="bg-white h-screen overflow-hidden">
+    <main className={`bg-white ${animationComplete ? 'min-h-screen' : 'h-screen overflow-hidden'}`}>
       {/* Sophisticated Preloader */}
       {!preloaderComplete && (
         <Preloader
@@ -224,7 +247,16 @@ export default function Home() {
         isReady={preloaderComplete}
         isMobile={isMobile}
         onCtaClick={openModal}
+        onAnimationComplete={handleAnimationComplete}
       />
+
+      {/* Scrollable sections after animation completes */}
+      {animationComplete && (
+        <>
+          <ValueProposition onCtaClick={openModal} />
+          <FinalCTA onCtaClick={openModal} />
+        </>
+      )}
 
       {/* Signup Modal */}
       <SignupModal isOpen={isModalOpen} onClose={closeModal} />
