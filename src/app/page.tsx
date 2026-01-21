@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Preloader from '@/components/preloader/Preloader';
-import SignupForm from '@/components/forms/SignupForm';
+import SignupModal from '@/components/forms/SignupModal';
 import CookieConsent from '@/components/consent/CookieConsent';
 import StaticFallback from '@/components/sections/StaticFallback';
-import AboutSection from '@/components/sections/AboutSection';
+import SignupForm from '@/components/forms/SignupForm';
 
 // Dynamically import heavy components to avoid SSR issues
 const HeroJourney = dynamic(() => import('@/components/sections/HeroJourney'), {
@@ -23,6 +23,7 @@ export default function Home() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Ensure client-side hydration first
   useEffect(() => {
@@ -42,9 +43,18 @@ export default function Home() {
 
     checkMobile();
 
+    // Disable scrolling on the page
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
     // Listen for resize to handle orientation changes
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      // Restore scrolling on unmount
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
   }, []);
 
   // Only load images after client is ready and mobile detection is complete
@@ -146,6 +156,10 @@ export default function Home() {
     setPreloaderComplete(true);
   };
 
+  // Modal controls
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+
   // Show loading state during SSR/hydration
   if (!isClient) {
     return (
@@ -158,12 +172,9 @@ export default function Home() {
   // Show static fallback for reduced motion preference
   if (prefersReducedMotion) {
     return (
-      <main className="bg-white">
+      <main className="bg-white h-screen overflow-hidden">
         <StaticFallback reason="reduced-motion" />
-        <AboutSection />
-        <div id="signup">
-          <SignupForm />
-        </div>
+        <SignupModal isOpen={isModalOpen} onClose={closeModal} />
         <CookieConsent />
       </main>
     );
@@ -172,9 +183,8 @@ export default function Home() {
   // Show static fallback on error
   if (error) {
     return (
-      <main className="bg-white">
+      <main className="bg-white h-screen overflow-hidden">
         <StaticFallback reason="error" />
-        <AboutSection />
         <div id="signup">
           <SignupForm />
         </div>
@@ -184,7 +194,7 @@ export default function Home() {
   }
 
   return (
-    <main className="bg-white">
+    <main className="bg-white h-screen overflow-hidden">
       {/* Sophisticated Preloader */}
       {!preloaderComplete && (
         <Preloader
@@ -194,20 +204,16 @@ export default function Home() {
         />
       )}
 
-      {/* Hero Journey with canvas animation */}
+      {/* Hero Journey with canvas animation - auto-plays */}
       <HeroJourney
         images={images}
         isReady={isReady && preloaderComplete}
         isMobile={isMobile}
+        onCtaClick={openModal}
       />
 
-      {/* About the Program Section */}
-      <AboutSection />
-
-      {/* Signup form section */}
-      <div id="signup">
-        <SignupForm />
-      </div>
+      {/* Signup Modal */}
+      <SignupModal isOpen={isModalOpen} onClose={closeModal} />
 
       {/* Cookie consent banner */}
       <CookieConsent />

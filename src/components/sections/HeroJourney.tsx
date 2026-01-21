@@ -1,32 +1,32 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { gsap, ScrollTrigger } from '@/lib/gsap';
 import { CanvasRenderer, getFrameIndex, CANVAS_CONFIG } from '@/hooks/useCanvasSequence';
 
 interface HeroJourneyProps {
   images: HTMLImageElement[];
   isReady: boolean;
   isMobile?: boolean;
+  onCtaClick?: () => void;
 }
 
 /**
- * NARRATIVE TIMELINE (Scroll Progress 0-1):
+ * AUTO-PLAY ANIMATION TIMELINE (7 seconds total):
  *
- * Phase 1 (0.00 - 0.12): INTRO TEXT
+ * Phase 1 (0.00 - 0.12): INTRO TEXT - 0.84 seconds
  *   - "Home Is Not a Place. It Is Belonging." on clean white
  *   - Canvas hidden (opacity 0)
  *
- * Phase 2 (0.12 - 0.20): TRANSITION IN
+ * Phase 2 (0.12 - 0.20): TRANSITION IN - 0.56 seconds
  *   - Intro text fades OUT
  *   - Canvas fades IN
  *
- * Phase 3 (0.20 - 0.80): THE SCRUB
- *   - User scrubs through 240 frames (USA → Plane → Carmiel)
+ * Phase 3 (0.20 - 0.80): THE SCRUB - 4.2 seconds
+ *   - Auto-play through 240 frames (USA → Plane → Carmiel)
  *   - Canvas fully visible
  *
- * Phase 4 (0.80 - 1.00): CROSSFADE FINALE
+ * Phase 4 (0.80 - 1.00): CROSSFADE FINALE - 1.4 seconds
  *   - Canvas fades OUT smoothly
  *   - "Welcome Home" fades IN simultaneously (crossfade)
  */
@@ -39,13 +39,17 @@ const PHASES = {
   finaleStart: 0.80, // Start finale at same time as scrub ends for crossfade
 };
 
-export default function HeroJourney({ images, isReady, isMobile = false }: HeroJourneyProps) {
+const ANIMATION_DURATION = 7000; // 7 seconds in milliseconds
+
+export default function HeroJourney({ images, isReady, isMobile = false, onCtaClick }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const [animationProgress, setAnimationProgress] = useState(0);
   const [canvasReady, setCanvasReady] = useState(false);
+  const [animationStarted, setAnimationStarted] = useState(false);
 
   // Initialize canvas renderer with cover mode on mobile
   useEffect(() => {
@@ -75,65 +79,92 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
     }
   }, [images, canvasReady]);
 
-  // Setup ScrollTrigger
+  // Auto-play animation loop
+  const animate = useCallback((currentTime: number) => {
+    if (startTimeRef.current === null) {
+      startTimeRef.current = currentTime;
+    }
+
+    const elapsed = currentTime - startTimeRef.current;
+    const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+
+    setAnimationProgress(progress);
+
+    // Update canvas frames during scrub phase (20-80%)
+    if (rendererRef.current && progress >= PHASES.transitionEnd && progress <= PHASES.scrubEnd) {
+      const scrubProgress = (progress - PHASES.transitionEnd) / (PHASES.scrubEnd - PHASES.transitionEnd);
+      const frameIndex = getFrameIndex(scrubProgress, CANVAS_CONFIG.totalFrames);
+      rendererRef.current.setTargetFrame(frameIndex);
+    }
+
+    if (progress < 1) {
+      animationRef.current = requestAnimationFrame(animate);
+    } else {
+      // Animation complete - ensure we show the last frame
+      if (rendererRef.current) {
+        rendererRef.current.setTargetFrame(CANVAS_CONFIG.totalFrames - 1);
+      }
+    }
+  }, []);
+
+  // Start animation when ready
   useEffect(() => {
-    if (!containerRef.current || !stickyRef.current) return;
+    if (!isReady || !canvasReady || animationStarted) return;
 
-    const trigger = ScrollTrigger.create({
-      trigger: containerRef.current,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.5, // Slightly smoother scrub for pleasant feel
-      pin: stickyRef.current,
-      pinSpacing: true,
-      onUpdate: (self) => {
-        setScrollProgress(self.progress);
-
-        // Update canvas frames during scrub phase (0.25 - 0.85)
-        if (rendererRef.current && self.progress >= PHASES.transitionEnd && self.progress <= PHASES.scrubEnd) {
-          const scrubProgress = (self.progress - PHASES.transitionEnd) / (PHASES.scrubEnd - PHASES.transitionEnd);
-          const frameIndex = getFrameIndex(scrubProgress, CANVAS_CONFIG.totalFrames);
-          rendererRef.current.setTargetFrame(frameIndex);
-        }
-      },
-    });
+    // Small delay to ensure everything is rendered
+    const startDelay = setTimeout(() => {
+      setAnimationStarted(true);
+      animationRef.current = requestAnimationFrame(animate);
+    }, 100);
 
     return () => {
-      trigger.kill();
+      clearTimeout(startDelay);
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
-  }, [images.length]);
+  }, [isReady, canvasReady, animationStarted, animate]);
 
-  // Calculate opacities based on scroll progress
+  // Cleanup animation on unmount
+  useEffect(() => {
+    return () => {
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  // Calculate opacities based on animation progress
   const getIntroOpacity = () => {
-    if (scrollProgress <= PHASES.introEnd) return 1;
-    if (scrollProgress >= PHASES.transitionEnd) return 0;
+    if (animationProgress <= PHASES.introEnd) return 1;
+    if (animationProgress >= PHASES.transitionEnd) return 0;
     // Smooth fade out during transition
-    const progress = (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+    const progress = (animationProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
     return 1 - easeInOutCubic(progress);
   };
 
   const getCanvasOpacity = () => {
-    if (scrollProgress < PHASES.introEnd) return 0;
-    if (scrollProgress >= PHASES.transitionEnd && scrollProgress <= PHASES.scrubEnd) return 1;
-    if (scrollProgress < PHASES.transitionEnd) {
+    if (animationProgress < PHASES.introEnd) return 0;
+    if (animationProgress >= PHASES.transitionEnd && animationProgress <= PHASES.scrubEnd) return 1;
+    if (animationProgress < PHASES.transitionEnd) {
       // Smooth fade in during transition
-      const progress = (scrollProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
+      const progress = (animationProgress - PHASES.introEnd) / (PHASES.transitionEnd - PHASES.introEnd);
       return easeInOutCubic(progress);
     }
-    if (scrollProgress > PHASES.scrubEnd) {
-      // Smooth crossfade out - takes 20% of scroll (0.80 to 1.00)
+    if (animationProgress > PHASES.scrubEnd) {
+      // Smooth crossfade out - takes 20% of animation (0.80 to 1.00)
       const fadeOutDuration = 1 - PHASES.scrubEnd;
-      const progress = (scrollProgress - PHASES.scrubEnd) / fadeOutDuration;
+      const progress = (animationProgress - PHASES.scrubEnd) / fadeOutDuration;
       return 1 - easeInOutCubic(Math.min(1, progress));
     }
     return 0;
   };
 
   const getFinaleOpacity = () => {
-    if (scrollProgress < PHASES.finaleStart) return 0;
+    if (animationProgress < PHASES.finaleStart) return 0;
     // Smooth crossfade in - synchronized with canvas fade out
     const fadeInDuration = 1 - PHASES.finaleStart;
-    const progress = (scrollProgress - PHASES.finaleStart) / fadeInDuration;
+    const progress = (animationProgress - PHASES.finaleStart) / fadeInDuration;
     return easeInOutCubic(Math.min(1, progress));
   };
 
@@ -149,108 +180,70 @@ export default function HeroJourney({ images, isReady, isMobile = false }: HeroJ
   return (
     <section
       ref={containerRef}
-      className="relative"
-      style={{ height: '450vh', backgroundColor: '#F8F6F3' }}
+      className="relative w-full h-screen overflow-hidden"
+      style={{ backgroundColor: '#F8F6F3' }}
       aria-label="Hero journey"
     >
-      {/* Sticky container */}
+      {/* Canvas layer - z-index 10 */}
       <div
-        ref={stickyRef}
-        className="w-full h-screen overflow-hidden"
-        style={{ backgroundColor: '#F8F6F3' }}
+        className="absolute inset-0 z-10"
+        style={{ opacity: canvasOpacity, backgroundColor: '#F8F6F3' }}
       >
-        {/* Canvas layer - z-index 10 */}
-        <div
-          className="absolute inset-0 z-10"
-          style={{ opacity: canvasOpacity, backgroundColor: '#F8F6F3' }}
-        >
-          <canvas
-            ref={canvasRef}
-            className="w-full h-full"
-            aria-hidden="true"
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+          aria-hidden="true"
+        />
+      </div>
+
+      {/* PHASE 1: Intro Text - z-index 20 */}
+      <motion.div
+        className="absolute inset-0 z-20 flex items-center justify-center"
+        style={{ opacity: introOpacity }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-midnight-blue leading-tight">
+            Home Is Not a Place.
+          </h1>
+          <p className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-midnight-blue/80">
+            It Is Belonging.
+          </p>
+        </div>
+      </motion.div>
+
+      {/* PHASE 4: Finale Text with CTA - z-index 20 */}
+      <motion.div
+        className="absolute inset-0 z-20 flex items-center justify-center"
+        style={{ opacity: finaleOpacity }}
+      >
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
+          <h2 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-midnight-blue leading-tight">
+            Welcome Home.
+          </h2>
+          <button
+            onClick={onCtaClick}
+            className="inline-block mt-10 px-12 py-5 border-2 border-soft-gold text-midnight-blue
+                       font-serif text-xl tracking-wide bg-soft-gold/10
+                       hover:bg-soft-gold/20 transition-all duration-300
+                       hover:shadow-lg hover:shadow-soft-gold/20 cursor-pointer"
+          >
+            Join the March Conference
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Progress indicator - subtle bar at bottom */}
+      <div className={`absolute z-30 ${isMobile ? 'bottom-6 left-6 right-6' : 'bottom-8 left-1/2 -translate-x-1/2 w-32'}`}>
+        {/* Background track - thin and subtle */}
+        <div className={`${isMobile ? 'h-[2px]' : 'h-[3px]'} w-full bg-midnight-blue/10 rounded-full overflow-hidden backdrop-blur-sm`}>
+          {/* Progress bar - soft gold, semi-transparent */}
+          <motion.div
+            className="h-full bg-gradient-to-r from-soft-gold/60 to-soft-gold/80 rounded-full origin-left"
+            style={{
+              width: `${animationProgress * 100}%`,
+            }}
           />
         </div>
-
-        {/* PHASE 1: Intro Text - z-index 20 */}
-        <motion.div
-          className="absolute inset-0 z-20 flex items-center justify-center"
-          style={{ opacity: introOpacity }}
-        >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
-            <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-midnight-blue leading-tight">
-              Home Is Not a Place.
-            </h1>
-            <p className="mt-4 font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-midnight-blue/80">
-              It Is Belonging.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* PHASE 4: Finale Text - z-index 20 */}
-        <motion.div
-          className="absolute inset-0 z-20 flex items-center justify-center"
-          style={{ opacity: finaleOpacity }}
-        >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
-            <h2 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-midnight-blue leading-tight">
-              Welcome Home.
-            </h2>
-            <a
-              href="#signup"
-              className="inline-block mt-10 px-12 py-5 border-2 border-soft-gold text-midnight-blue
-                         font-serif text-xl tracking-wide bg-soft-gold/10
-                         hover:bg-soft-gold/20 transition-all duration-300
-                         hover:shadow-lg hover:shadow-soft-gold/20"
-            >
-              Join the March Conference
-            </a>
-          </div>
-        </motion.div>
-
-        {/* Scroll Progress Indicator - Bottom, delicate and subtle */}
-        <div className={`absolute z-30 ${isMobile ? 'bottom-6 left-6 right-6' : 'bottom-8 left-1/2 -translate-x-1/2 w-32'}`}>
-          {/* Background track - thin and subtle */}
-          <div className={`${isMobile ? 'h-[2px]' : 'h-[3px]'} w-full bg-midnight-blue/10 rounded-full overflow-hidden backdrop-blur-sm`}>
-            {/* Progress bar - soft gold, semi-transparent */}
-            <motion.div
-              className="h-full bg-gradient-to-r from-soft-gold/60 to-soft-gold/80 rounded-full origin-left"
-              style={{
-                width: `${scrollProgress * 100}%`,
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Scroll hint - only at start */}
-        {scrollProgress < 0.05 && (
-          <motion.div
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-          >
-            <div className="flex flex-col items-center text-midnight-blue/40">
-              <span className="text-sm font-sans mb-2 tracking-widest uppercase">Scroll</span>
-              <motion.div
-                animate={{ y: [0, 8, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 5v14M19 12l-7 7-7-7" />
-                </svg>
-              </motion.div>
-            </div>
-          </motion.div>
-        )}
       </div>
     </section>
   );
