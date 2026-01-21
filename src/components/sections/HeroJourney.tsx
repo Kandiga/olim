@@ -14,13 +14,13 @@ interface HeroJourneyProps {
 
 const PHASES = {
   introStart: 0,
-  introEnd: 0.12,
-  transitionEnd: 0.20,
-  scrubEnd: 0.80,
-  finaleStart: 0.80,
+  introEnd: 0.10,
+  transitionEnd: 0.15,
+  scrubEnd: 0.90,
+  finaleStart: 0.90,
 };
 
-const ANIMATION_DURATION = 7000; // 7 seconds
+const ANIMATION_DURATION = 9000; // 9 seconds for full journey
 
 export default function HeroJourney({ images, isReady, isMobile = false, onCtaClick, onAnimationComplete }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
