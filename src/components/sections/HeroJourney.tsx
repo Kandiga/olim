@@ -11,26 +11,6 @@ interface HeroJourneyProps {
   onCtaClick?: () => void;
 }
 
-/**
- * AUTO-PLAY ANIMATION TIMELINE (7 seconds total):
- *
- * Phase 1 (0.00 - 0.12): INTRO TEXT - 0.84 seconds
- *   - "Home Is Not a Place. It Is Belonging." on clean white
- *   - Canvas hidden (opacity 0)
- *
- * Phase 2 (0.12 - 0.20): TRANSITION IN - 0.56 seconds
- *   - Intro text fades OUT
- *   - Canvas fades IN
- *
- * Phase 3 (0.20 - 0.80): THE SCRUB - 4.2 seconds
- *   - Auto-play through 240 frames (USA → Plane → Carmiel)
- *   - Canvas fully visible
- *
- * Phase 4 (0.80 - 1.00): CROSSFADE FINALE - 1.4 seconds
- *   - Canvas fades OUT smoothly
- *   - "Welcome Home" fades IN simultaneously (crossfade)
- */
-
 const PHASES = {
   introStart: 0,
   introEnd: 0.12,
@@ -39,18 +19,24 @@ const PHASES = {
   finaleStart: 0.80,
 };
 
-const ANIMATION_DURATION = 7000; // 7 seconds in milliseconds
+const ANIMATION_DURATION = 7000; // 7 seconds
 
 export default function HeroJourney({ images, isReady, isMobile = false, onCtaClick }: HeroJourneyProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
   const imagesRef = useRef<HTMLImageElement[]>(images);
+  const animationStartedRef = useRef(false);
+  const startTimeRef = useRef<number | null>(null);
   const [animationProgress, setAnimationProgress] = useState(0);
 
-  // Keep imagesRef in sync with latest images
+  // Keep imagesRef in sync
   useEffect(() => {
     imagesRef.current = images;
+    // Update renderer with new images
+    if (rendererRef.current && images.length > 0 && images[0]) {
+      rendererRef.current.setImages(images);
+    }
   }, [images]);
 
   // Initialize canvas renderer
@@ -60,8 +46,11 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
     const initTimer = setTimeout(() => {
       if (!rendererRef.current && canvasRef.current) {
         rendererRef.current = new CanvasRenderer(canvasRef.current, isMobile);
+        if (imagesRef.current.length > 0 && imagesRef.current[0]) {
+          rendererRef.current.setImages(imagesRef.current);
+        }
       }
-    }, 100);
+    }, 50);
 
     return () => {
       clearTimeout(initTimer);
@@ -72,34 +61,21 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
     };
   }, [isMobile]);
 
-  // Update images when available
+  // Animation loop - runs continuously once started
   useEffect(() => {
-    if (rendererRef.current && images.length > 0 && images[0]) {
-      rendererRef.current.setImages(images);
-    }
-  }, [images]);
-
-  // START ANIMATION IMMEDIATELY when isReady becomes true
-  useEffect(() => {
-    if (!isReady) return;
-
-    console.log('HeroJourney: Starting animation!');
-
-    let startTime: number | null = null;
     let animationId: number;
 
     const animate = (currentTime: number) => {
-      if (startTime === null) {
-        startTime = currentTime;
+      if (startTimeRef.current === null) {
+        startTimeRef.current = currentTime;
       }
 
-      const elapsed = currentTime - startTime;
+      const elapsed = currentTime - startTimeRef.current;
       const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
 
       setAnimationProgress(progress);
 
       // Update canvas frames during scrub phase (20-80%)
-      // Use imagesRef to get latest images, supporting mobile (120) and desktop (240) frame counts
       const totalFrames = imagesRef.current.length || 240;
       if (rendererRef.current && progress >= PHASES.transitionEnd && progress <= PHASES.scrubEnd) {
         const scrubProgress = (progress - PHASES.transitionEnd) / (PHASES.scrubEnd - PHASES.transitionEnd);
@@ -109,33 +85,43 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
 
       if (progress < 1) {
         animationId = requestAnimationFrame(animate);
-      } else {
-        // Animation complete - ensure we show the last frame
-        if (rendererRef.current) {
-          rendererRef.current.setTargetFrame(totalFrames - 1);
-        }
+      } else if (rendererRef.current) {
+        rendererRef.current.setTargetFrame(totalFrames - 1);
       }
     };
 
-    // Start after a tiny delay
-    const startDelay = setTimeout(() => {
+    const startAnimation = () => {
+      if (animationStartedRef.current) return;
+      animationStartedRef.current = true;
+      console.log('HeroJourney: Animation starting NOW');
       animationId = requestAnimationFrame(animate);
-    }, 50);
+    };
+
+    // Start animation when isReady OR after 3 seconds max (failsafe)
+    if (isReady && !animationStartedRef.current) {
+      startAnimation();
+    }
+
+    // Failsafe: Start animation after 3 seconds no matter what
+    const failsafeTimer = setTimeout(() => {
+      if (!animationStartedRef.current) {
+        console.log('HeroJourney: Failsafe triggered - starting animation');
+        startAnimation();
+      }
+    }, 3000);
 
     return () => {
-      clearTimeout(startDelay);
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-      }
+      clearTimeout(failsafeTimer);
+      // Don't cancel animation on cleanup - let it run
     };
   }, [isReady]);
 
-  // Easing function for smooth transitions
+  // Easing function
   function easeInOutCubic(t: number): number {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   }
 
-  // Calculate opacities based on animation progress
+  // Calculate opacities
   const getIntroOpacity = () => {
     if (animationProgress <= PHASES.introEnd) return 1;
     if (animationProgress >= PHASES.transitionEnd) return 0;
@@ -165,10 +151,6 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
     return easeInOutCubic(Math.min(1, progress));
   };
 
-  const introOpacity = getIntroOpacity();
-  const canvasOpacity = getCanvasOpacity();
-  const finaleOpacity = getFinaleOpacity();
-
   return (
     <section
       ref={containerRef}
@@ -176,22 +158,18 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
       style={{ backgroundColor: '#F8F6F3' }}
       aria-label="Hero journey"
     >
-      {/* Canvas layer - z-index 10 */}
+      {/* Canvas layer */}
       <div
         className="absolute inset-0 z-10"
-        style={{ opacity: canvasOpacity, backgroundColor: '#F8F6F3' }}
+        style={{ opacity: getCanvasOpacity(), backgroundColor: '#F8F6F3' }}
       >
-        <canvas
-          ref={canvasRef}
-          className="w-full h-full"
-          aria-hidden="true"
-        />
+        <canvas ref={canvasRef} className="w-full h-full" aria-hidden="true" />
       </div>
 
-      {/* PHASE 1: Intro Text - z-index 20 */}
+      {/* Intro Text */}
       <motion.div
         className="absolute inset-0 z-20 flex items-center justify-center"
-        style={{ opacity: introOpacity }}
+        style={{ opacity: getIntroOpacity() }}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-midnight-blue leading-tight">
@@ -203,10 +181,10 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
         </div>
       </motion.div>
 
-      {/* PHASE 4: Finale Text with CTA - z-index 20 */}
+      {/* Finale Text with CTA */}
       <motion.div
         className="absolute inset-0 z-20 flex items-center justify-center"
-        style={{ opacity: finaleOpacity }}
+        style={{ opacity: getFinaleOpacity() }}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center max-w-4xl px-6">
           <h2 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-midnight-blue leading-tight">
@@ -224,14 +202,12 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
         </div>
       </motion.div>
 
-      {/* Progress indicator - subtle bar at bottom */}
+      {/* Progress indicator */}
       <div className={`absolute z-30 ${isMobile ? 'bottom-6 left-6 right-6' : 'bottom-8 left-1/2 -translate-x-1/2 w-32'}`}>
         <div className={`${isMobile ? 'h-[2px]' : 'h-[3px]'} w-full bg-midnight-blue/10 rounded-full overflow-hidden backdrop-blur-sm`}>
           <motion.div
             className="h-full bg-gradient-to-r from-soft-gold/60 to-soft-gold/80 rounded-full origin-left"
-            style={{
-              width: `${animationProgress * 100}%`,
-            }}
+            style={{ width: `${animationProgress * 100}%` }}
           />
         </div>
       </div>
