@@ -62,7 +62,8 @@ export default function Home() {
     if (!isClient || prefersReducedMotion) return;
 
     let isMounted = true;
-    const TOTAL_FRAMES = 240;
+    // Mobile has 120 frames, desktop has 240 frames
+    const TOTAL_FRAMES = isMobile ? 120 : 240;
     // Load fewer priority frames on mobile for faster initial load
     const PRIORITY_FRAMES = isMobile ? 30 : 50;
     const BATCH_SIZE = isMobile ? 5 : 10;

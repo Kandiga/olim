@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CanvasRenderer, getFrameIndex, CANVAS_CONFIG } from '@/hooks/useCanvasSequence';
+import { CanvasRenderer, getFrameIndex } from '@/hooks/useCanvasSequence';
 
 interface HeroJourneyProps {
   images: HTMLImageElement[];
@@ -45,7 +45,13 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<CanvasRenderer | null>(null);
+  const imagesRef = useRef<HTMLImageElement[]>(images);
   const [animationProgress, setAnimationProgress] = useState(0);
+
+  // Keep imagesRef in sync with latest images
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
 
   // Initialize canvas renderer
   useEffect(() => {
@@ -93,9 +99,11 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
       setAnimationProgress(progress);
 
       // Update canvas frames during scrub phase (20-80%)
+      // Use imagesRef to get latest images, supporting mobile (120) and desktop (240) frame counts
+      const totalFrames = imagesRef.current.length || 240;
       if (rendererRef.current && progress >= PHASES.transitionEnd && progress <= PHASES.scrubEnd) {
         const scrubProgress = (progress - PHASES.transitionEnd) / (PHASES.scrubEnd - PHASES.transitionEnd);
-        const frameIndex = getFrameIndex(scrubProgress, CANVAS_CONFIG.totalFrames);
+        const frameIndex = getFrameIndex(scrubProgress, totalFrames);
         rendererRef.current.setTargetFrame(frameIndex);
       }
 
@@ -104,7 +112,7 @@ export default function HeroJourney({ images, isReady, isMobile = false, onCtaCl
       } else {
         // Animation complete - ensure we show the last frame
         if (rendererRef.current) {
-          rendererRef.current.setTargetFrame(CANVAS_CONFIG.totalFrames - 1);
+          rendererRef.current.setTargetFrame(totalFrames - 1);
         }
       }
     };
